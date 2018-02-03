@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -72,8 +73,27 @@ func TestBookIndex(t *testing.T) {
 	}
 }
 
+func TestBookView(t *testing.T) {
+	res := ResponseForTest("GET", "/books/1234", BookShow)
+	if res.Code != 200 {
+		t.Errorf("Incorrect response code.\nExpected: 200\nActual: %d", res.Code)
+	}
+}
+
 // Mocks a handler and returns a httptest.ResponseRecorder
 func newRequestRecorder(req *http.Request, method string, path string, handler func(w http.ResponseWriter, r *http.Request, param httprouter.Params)) *httptest.ResponseRecorder {
+	router := httprouter.New()
+	router.Handle(method, path, handler)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	return rr
+}
+
+func ResponseForTest(method string, path string, handler func(w http.ResponseWriter, r *http.Request, param httprouter.Params)) *httptest.ResponseRecorder {
+	req, err := http.NewRequest(method, path, nil)
+	if err != nil {
+		panic(fmt.Sprintf("http.NewRequest returned the following error %s", err))
+	}
 	router := httprouter.New()
 	router.Handle(method, path, handler)
 	rr := httptest.NewRecorder()
